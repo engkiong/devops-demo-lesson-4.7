@@ -73,11 +73,26 @@ jobs:
             echo "Pushing image to Docker Hub..."
             docker push $DOCKER_USERNAME/devops-demo:latest
 
+  # ==========================================
+  # DEPLOY JOB - Deploy to Railway
+  # ==========================================
+  deploy:
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - checkout
+      - run:
+          name: Install Railway CLI
+          command: npm install -g @railway/cli
+      - run:
+          name: Deploy to Railway
+          command: railway up --ci --service $RAILWAY_SERVICE_ID
+
 # ==========================================
 # WORKFLOW - Run jobs in sequence
 # ==========================================
 workflows:
-  build_test_publish:
+  build_test_publish_deploy:
     jobs:
       - build
       - test:
@@ -87,3 +102,9 @@ workflows:
           context: docker-hub
           requires:
             - test
+      - deploy:
+          requires:
+            - publish
+          filters:
+            branches:
+              only: main
